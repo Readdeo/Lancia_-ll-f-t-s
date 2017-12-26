@@ -1,3 +1,5 @@
+#include <everytime.h>
+
 //Lábkiosztás
 const int heaterPin = 5; //Digital láb kimenet a fűtés kapcsoló reléhez
 const int battVoltagePin = 6; //Analog bemenet láb feszültségosztóval az akksi szint figyeléshez.
@@ -7,7 +9,7 @@ const int statusLED = 8; //LED ami akkor világít, ha bekapcsoltuk a fűtést
 
 //Egyéb globális változók
 bool turnHeaterOn = false; //Bool változó ami ha igaz, bekapcsolja a fűtést
-float batteryMinV = 11.9; //Az akksi minimális feszültsége aminél nem enged fűteni
+float batteryMinV = 11.9; //Az akksi minimális feszültsége ami alatt nem enged fűteni
 int switcherState = 0; //Kapcsoló állapotát tároló változó
 long turnOnMillis = 0;
 long heatingTime = 60000 * 30; //A fűtés bekapcsolva tartásának ideje millisec-ben
@@ -28,22 +30,34 @@ void loop() {
   Serial.print(batteryVoltage); // Soros ablakba kiírja a feszültséget
   Serial.println(" V"); // Soros ablakba kiírja a szöveget, majd új sort kezd
 
+//Beolvassuk a kapcsoló jelét
+every(50){
+  switcherState = digitalRead(switcherPin);
+}
+  
+//Bekapcsolja a fűtést, ha a kapcsoló állapota HIGH-ra változott
+  if (switcherState == HIGH) {
+    // Ha jelet érez a switcher lábon, be/ki kapcsolja a fűtést
+    if (turnHeaterOn == false){
+      turnHeaterOn = true;
+      turnOnMillis = millis();
+      Serial.print("Kapcsolójel állapota: "); // Soros ablakba kiírja a szöveget
+      Serial.println(switcherState); // Soros ablakba kiírja a kapcsolójel állapotát, majd új sort kezd
+    }else{
+      turnHeaterOn = false;
+    }
+  }
+
+//Ha eltelt a fűtés kívánt ideje, kikapcsolja a fűtést
+  if (millis() > turnOnMillis + heatingTime){
+    turnHeaterOn = false;
+  }
+  
 // Ha az akksi feszültsége túl alacsony, kikapcsolja a fűtést
+//Ennek a loop végén kell lennie, a fűtés kapcsolása előtt, mert ha valami a loopon belül bekapcsolja a fűtést, azonnal le is nyomja
   if (batteryVoltage < batteryMinV){
     turnHeaterOn = false;
   }
-
-//Beolvassuk a kapcsoló jelét
-  switchState = digitalRead(switcherPin);
-  Serial.print("Kapcsolójel állapota: "); // Soros ablakba kiírja a szöveget
-  Serial.println(switchState) // Soros ablakba kiírja a kapcsolójel állapotát, majd új sort kezd
-
-//Bekapcsolja a fűtést, ha a kapcsoló állapota HIGH-ra változott
-  if (switcherState == HIGH) {
-    // Ha jelet érez a switcher lábon, bekapcsolja a fűtést
-    turnHeaterOn = true;
-    turnOnMillis = millis();
-  } 
 
 //Másodpercenként kétszer ellenőrzi, hogy be van-e kapcsolva a fűtés és kapcsolgatja a statusLED-et
 //és a fűtés reléjét
@@ -54,12 +68,6 @@ void loop() {
       }  else{
       digitalWrite(statusLED, LOW);
       digitalWrite(heaterPin, LOW);
+      }
   }
-  }
-
-//Ha eltelt a fűtés kívánt ideje, kikapcsolja a fűtést
-  if (millis() > turnOnMillis + heatingTime){
-    turnHeaterOn = false;
-  }
-
 }
