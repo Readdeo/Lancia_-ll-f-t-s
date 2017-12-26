@@ -54,7 +54,8 @@ every(50){
   }
   
 // Ha az akksi feszültsége túl alacsony, kikapcsolja a fűtést
-//Ennek a loop végén kell lennie, a fűtés kapcsolása előtt, mert ha valami a loopon belül bekapcsolja a fűtést, azonnal le is nyomja
+//Ennek a loop végén kell lennie, a fűtés kapcsolása előtt, mert ha valami a loopon belül bekapcsolná a fűtést,
+//felülírja a változót ha alacsony az akksi fesz, mielőtt megpróbálná bekapcsolni
   if (batteryVoltage < batteryMinV){
     turnHeaterOn = false;
   }
